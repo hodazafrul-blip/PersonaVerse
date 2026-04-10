@@ -41,15 +41,37 @@ class ApiService {
 
   Future<List<dynamic>> fetchCharacters() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/characters/')).timeout(const Duration(seconds: 2));
+      final response = await http.get(Uri.parse('$baseUrl/characters/')).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
     } catch (e) {
-      // Fallback to mock data if backend is offline
+      // Fallback
     }
     await Future.delayed(const Duration(milliseconds: 500));
     return _mockCharacters;
+  }
+
+  Future<Map<String, dynamic>> fetchProfile(int userId) async {
+    final response = await http.get(Uri.parse('$baseUrl/profile/$userId'));
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load profile');
+    }
+  }
+
+  Future<Map<String, dynamic>> createCharacter(Map<String, dynamic> data) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/characters/'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(data),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to create character');
+    }
   }
 
   Future<Map<String, dynamic>> sendMessage(int userId, int characterId, String content) async {
@@ -62,23 +84,25 @@ class ApiService {
           'character_id': characterId,
           'content': content,
         }),
-      ).timeout(const Duration(seconds: 2));
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
     } catch (e) {
-      // Fallback
+      // Fallback logic for demo
     }
-    await Future.delayed(const Duration(milliseconds: 800));
     
-    // Simulate AI thinking and mock response based on character
+    // Fallback Mock
+    await Future.delayed(const Duration(milliseconds: 800));
     final char = _mockCharacters.firstWhere((c) => c['id'] == characterId, orElse: () => _mockCharacters[0]);
     return {
       'id': DateTime.now().millisecondsSinceEpoch,
-      'content': "*(Mock Response from ${char['name']})* I hear you! As a ${char['category']} type, I think that's fascinating.",
+      'content': "*(Offline Response from ${char['name']})* I'm always here for you, even when the stars go dark.",
       'sender': 'character',
-      'timestamp': DateTime.now().toIso8601String()
+      'affinity_score': 10,
+      'relationship_stage': 'Friend',
+      'xp_gained': 10
     };
   }
 }

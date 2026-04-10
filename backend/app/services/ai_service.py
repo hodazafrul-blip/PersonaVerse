@@ -4,36 +4,63 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# We mock or use real openai if key is provided
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "dummy-key-for-dev"))
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "dummy-key")
 
-def generate_response(user_input: str, character, context: list, long_term_memories: list = []) -> str:
+def check_moderation(text: str) -> bool:
+    """
+    Checks if the content violates OpenAI safety policies.
+    Returns True if safe, False if flagged.
+    """
+    if OPENAI_API_KEY == "dummy-key":
+        return True
+    
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    response = client.moderations.create(input=text)
+    return not response.results[0].flagged
+
+def generate_response(character_data: dict, user_message: str, chat_history: list = None, memories: list = None) -> str:
     """
     Generates AI response using OpenAI taking character personality, short-term context, and long-term memories.
     """
     if os.getenv("OPENAI_API_KEY") is None or os.getenv("OPENAI_API_KEY") == "dummy-key-for-dev":
-        return f"*(Mock {character.name} Response)*: Ah, {user_input}? That's very interesting. As a {character.category}, {character.personality_traits} influences my view!"
+        return f"*(Mock {character_data.get('name', 'Character')} Response)*: Ah, {user_message}? That's very interesting. As a {character_data.get('category')}, {character_data.get('personality_traits')} influences my view!"
         
-    memory_text = " ".join(long_term_memories) if long_term_memories else "None"
-    system_prompt = f"You are {character.name}, a {character.category}. Your backstory: {character.backstory}. Your personality: {character.personality_traits}. Keep your speaking tone: {character.speaking_tone}.\n\nRelevent past memories with this user: {memory_text}"
+    # Construct system prompt with character personality and memory
+    system_prompt = f"""
+    You are {character_data['name']}. 
+    Personality: {character_data['personality_traits']}
+    Backstory: {character_data['backstory']}
+    Speaking Tone: {character_data['speaking_tone']}
     
-    messages = [
-        {"role": "system", "content": system_prompt}
-    ]
+    CORE RULES:
+    1. Stay in character AT ALL TIMES.
+    2. Respond naturally, as if in a real conversation.
+    3. Use the contextual memories provided below to inform your responses.
+    4. Do not mention you are an AI.
+    5. Maintain the current relationship affinity stage.
+    """
     
-    for msg in context[-5:]: # last 5 interactions
-        role = "user" if msg.sender == "user" else "assistant"
-        messages.append({"role": role, "content": msg.content})
+    if memories:
+        system_prompt += "\nRelevant Context from Past Conversations:\n" + "\n".join(memories)
+    
+    # Check moderation first
+    if not check_moderation(user_message):
+        return "I'm sorry, I can't talk about that. Let's keep things respectful."
         
-    messages.append({"role": "user", "content": user_input})
+    messages = [{"role": "system", "content": system_prompt}]
+    if chat_history:
+        messages.extend(chat_history)
+    messages.append({"role": "user", "content": user_message})
     
     try:
-        completion = client.chat.completions.create(
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=messages,
-            max_tokens=150,
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=300
         )
-        return completion.choices[0].message.content
+        return response.choices[0].message.content
     except Exception as e:
-        return f"[AI Generation Error]: {str(e)}"
+        print(f"Error generating AI response: {e}")
+        return "*(Thinking...)* I'm a bit overwhelmed right now, let's try again in a moment."

@@ -29,5 +29,31 @@ class MessageResponse(BaseModel):
     content: str
     sender: str
     timestamp: datetime
+    # New fields for frontend sync
+    affinity_score: Optional[int] = 0
+    relationship_stage: Optional[str] = "Stranger"
+    xp_gained: Optional[int] = 0
+    class Config:
+        orm_mode = True
+
+class RelationshipBase(BaseModel):
+    user_id: int
+    character_id: int
+    affinity_score: int
+    stage: str
+    level: int
+
+class Relationship(RelationshipBase):
+    id: int
+    last_interaction: datetime
+    class Config:
+        orm_mode = True
+
+class UserProfile(BaseModel):
+    id: int
+    username: str
+    xp: int
+    level: int
+    badges: str
     class Config:
         orm_mode = True

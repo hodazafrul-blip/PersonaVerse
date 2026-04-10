@@ -1,10 +1,39 @@
 import 'package:flutter/material.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ApiService _apiService = ApiService();
+  Map<String, dynamic>? _profile;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final data = await _apiService.fetchProfile(1); // Hardcoded user 1 for prototype
+      setState(() {
+        _profile = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
@@ -18,8 +47,8 @@ class ProfileScreen extends StatelessWidget {
                 child: Icon(Icons.person, size: 50, color: Colors.white),
               ),
               const SizedBox(height: 15),
-              const Text('Guest User', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-              const Text('Level 4 Explorer', style: TextStyle(color: Color(0xFFEC4899), fontSize: 14)),
+              Text(_profile?['username'] ?? 'Guest User', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Level ${_profile?['level'] ?? 1} Explorer (${_profile?['xp'] ?? 0} XP)', style: const TextStyle(color: Color(0xFFEC4899), fontSize: 14)),
               const SizedBox(height: 30),
               _buildPanel(
                 'Gamification & Rewards',

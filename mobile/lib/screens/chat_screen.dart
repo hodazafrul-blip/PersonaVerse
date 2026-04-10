@@ -16,15 +16,19 @@ class _ChatScreenState extends State<ChatScreen> {
   final ApiService _apiService = ApiService();
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
+  bool _isVoiceEnabled = false;
+  int _affinityScore = 0;
+  String _relationshipStage = 'Stranger';
 
   @override
   void initState() {
     super.initState();
-    // Initial greeting
     _messages.add({
       'text': "Hi there! I'm ${widget.character['name']}. Have you been looking for me?", 
       'sender': 'character'
     });
+    _affinityScore = widget.character['affinity_score'] ?? 0;
+    _relationshipStage = widget.character['relationship_stage'] ?? 'Stranger';
   }
 
   void _sendMessage() async {
@@ -43,18 +47,16 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           _messages.insert(0, {'text': response['content'], 'sender': 'character'});
+          _affinityScore = response['affinity_score'] ?? _affinityScore;
+          _relationshipStage = response['relationship_stage'] ?? _relationshipStage;
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error connecting to backend: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isTyping = false;
-        });
-      }
+      if (mounted) setState(() => _isTyping = false);
     }
   }
 
@@ -80,12 +82,16 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(widget.character['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const Text('Online • Story Mode', style: TextStyle(color: Color(0xFFEC4899), fontSize: 10)),
+                Text('Online • $_relationshipStage Stage', style: const TextStyle(color: Color(0xFFEC4899), fontSize: 10)),
               ],
             ),
           ],
         ),
         actions: [
+          IconButton(
+            icon: Icon(_isVoiceEnabled ? Icons.volume_up : Icons.volume_off, color: Color(0xFFEC4899), size: 20),
+            onPressed: () => setState(() => _isVoiceEnabled = !_isVoiceEnabled),
+          ),
           IconButton(icon: const Icon(Icons.videocam, color: Colors.white, size: 20), onPressed: () {}),
           IconButton(icon: const Icon(Icons.more_vert, color: Colors.white, size: 20), onPressed: () {}),
         ],
@@ -105,7 +111,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: LinearProgressIndicator(
-                      value: 0.35,
+                      value: (_affinityScore % 100) / 100.0,
                       backgroundColor: const Color(0xFF2E3257),
                       valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFEC4899)),
                       minHeight: 8,
@@ -113,7 +119,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Text('Lvl 3 (Friend)', style: TextStyle(color: Colors.pinkAccent, fontSize: 10)),
+                Text('Lvl ${(_affinityScore / 50).floor() + 1}', style: const TextStyle(color: Colors.pinkAccent, fontSize: 10)),
               ],
             ),
           ),

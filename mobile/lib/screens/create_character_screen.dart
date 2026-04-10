@@ -8,9 +8,43 @@ class CreateCharacterScreen extends StatefulWidget {
 }
 
 class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _backstoryController = TextEditingController();
+  final ApiService _apiService = ApiService();
+  bool _isSaving = false;
+
   double _funnySlider = 0.5;
   double _seriousSlider = 0.5;
   double _romanticSlider = 0.2;
+
+  void _saveCharacter() async {
+    if (_nameController.text.isEmpty || _backstoryController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    
+    try {
+      final res = await _apiService.createCharacter({
+        'name': _nameController.text,
+        'category': 'Roleplay',
+        'personality_traits': 'Humor: $_funnySlider, Stoic: $_seriousSlider, Romance: $_romanticSlider',
+        'backstory': _backstoryController.text,
+        'speaking_tone': 'Casual',
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Created ${res['name']} with DALL-E Avatar!')));
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +55,12 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
         backgroundColor: const Color(0xFF1E2140),
         elevation: 0,
         actions: [
-          TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Character Saved Natively!')));
-            },
-            child: const Text('SAVE', style: TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold)),
-          )
+          _isSaving 
+            ? const Center(child: Padding(padding: EdgeInsets.only(right: 20), child: CircularProgressIndicator(strokeWidth: 2)))
+            : TextButton(
+                onPressed: _saveCharacter,
+                child: const Text('GENERATE', style: TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold)),
+              )
         ],
       ),
       body: SingleChildScrollView(
@@ -49,7 +83,7 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
                     children: [
                       Icon(Icons.auto_awesome, color: Color(0xFFEC4899), size: 30),
                       SizedBox(height: 8),
-                      Text('Generate\nAvatar', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 12)),
+                      Text('DALL-E 3\nAvatar', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -58,6 +92,7 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
               const Text('Identity', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               TextField(
+                controller: _nameController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Character Name',
@@ -69,6 +104,7 @@ class _CreateCharacterScreenState extends State<CreateCharacterScreen> {
               ),
               const SizedBox(height: 15),
               TextField(
+                controller: _backstoryController,
                 maxLines: 4,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
