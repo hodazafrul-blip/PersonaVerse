@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+pydantic
+openai
+pinecone-client
+python-dotenv
+elevenlabs
