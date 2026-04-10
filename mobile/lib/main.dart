@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'screens/home_screen.dart';
+import 'screens/root_screen.dart';
 
 void main() {
   runApp(const PersonaVerseApp());
@@ -24,7 +24,7 @@ class PersonaVerseApp extends StatelessWidget {
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const RootScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

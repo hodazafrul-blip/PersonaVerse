@@ -17,6 +17,16 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Initial greeting
+    _messages.add({
+      'text': "Hi there! I'm ${widget.character['name']}. Have you been looking for me?", 
+      'sender': 'character'
+    });
+  }
+
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
@@ -29,47 +39,66 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
-      // Mocking user_id = 1 for now
       final response = await _apiService.sendMessage(1, widget.character['id'], text);
-      setState(() {
-        _messages.insert(0, {'text': response['content'], 'sender': 'character'});
-      });
+      if (mounted) {
+        setState(() {
+          _messages.insert(0, {'text': response['content'], 'sender': 'character'});
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error connecting to backend: $e')));
+      }
     } finally {
-      setState(() {
-        _isTyping = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
+        titleSpacing: 0,
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: widget.character['avatar_url'] != null 
-                  ? NetworkImage(widget.character['avatar_url']) 
-                  : null,
+            Hero(
+              tag: 'avatar_${widget.character['id']}',
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: widget.character['avatar_url'] != null 
+                    ? NetworkImage(widget.character['avatar_url']) 
+                    : null,
+              ),
             ),
-            const SizedBox(width: 10),
-            Text(widget.character['name']),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.character['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const Text('Online', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+              ],
+            ),
           ],
         ),
+        actions: [
+          IconButton(icon: const Icon(Icons.call, color: Colors.white), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.videocam, color: Colors.white), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.more_vert, color: Colors.white), onPressed: () {}),
+        ],
         backgroundColor: const Color(0xFF1E2140),
-        elevation: 0,
+        elevation: 1,
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
               reverse: true,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               itemCount: _messages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_isTyping && index == 0) {
@@ -77,7 +106,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     alignment: Alignment.centerLeft,
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Text('Typing...', style: TextStyle(color: Colors.grey)),
+                      child: Text('Typing...', style: TextStyle(color: Color(0xFFEC4899), fontStyle: FontStyle.italic)),
                     ),
                   );
                 }
@@ -85,48 +114,70 @@ class _ChatScreenState extends State<ChatScreen> {
                 final isUser = msg['sender'] == 'user';
                 
                 return Bubble(
-                  margin: const BubbleEdges.only(top: 10),
+                  margin: const BubbleEdges.only(top: 15),
                   alignment: isUser ? Alignment.topRight : Alignment.topLeft,
                   nip: isUser ? BubbleNip.rightBottom : BubbleNip.leftBottom,
                   color: isUser ? const Color(0xFF6366F1) : const Color(0xFF2E3257),
-                  child: Text(
-                    msg['text'],
-                    style: const TextStyle(color: Colors.white),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Text(
+                      msg['text'],
+                      style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.4),
+                    ),
                   ),
                 );
               },
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            color: const Color(0xFF1E2140),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12).copyWith(bottom: MediaQuery.of(context).padding.bottom + 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E2140),
+              border: Border(top: BorderSide(color: Colors.black12)),
+            ),
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.add, color: Colors.grey),
-                  onPressed: () {},
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFF0F172A),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2E3257),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    onPressed: () {},
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Color(0xFF6366F1)),
-                  onPressed: _sendMessage,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2E3257),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Message...',
+                        hintStyle: TextStyle(color: Colors.grey),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF6366F1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                    onPressed: _sendMessage,
+                  ),
                 ),
               ],
             ),
