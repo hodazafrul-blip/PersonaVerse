@@ -79,22 +79,44 @@ class _ChatScreenState extends State<ChatScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.character['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                const Text('Online', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                Text(widget.character['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text('Online • Story Mode', style: TextStyle(color: Color(0xFFEC4899), fontSize: 10)),
               ],
             ),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.call, color: Colors.white), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.videocam, color: Colors.white), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.more_vert, color: Colors.white), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.videocam, color: Colors.white, size: 20), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.more_vert, color: Colors.white, size: 20), onPressed: () {}),
         ],
         backgroundColor: const Color(0xFF1E2140),
-        elevation: 1,
+        elevation: 0,
       ),
       body: Column(
         children: [
+          Container(
+            color: const Color(0xFF1E2140),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                const Text('Affinity', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: 0.35,
+                      backgroundColor: const Color(0xFF2E3257),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFEC4899)),
+                      minHeight: 8,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text('Lvl 3 (Friend)', style: TextStyle(color: Colors.pinkAccent, fontSize: 10)),
+              ],
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               reverse: true,

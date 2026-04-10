@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'chat_history_screen.dart';
+import 'create_character_screen.dart';
+import 'profile_screen.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -13,9 +16,9 @@ class _RootScreenState extends State<RootScreen> {
   
   final List<Widget> _pages = [
     const HomeScreen(),
-    const Center(child: Text("Chats", style: TextStyle(color: Colors.white, fontSize: 24))),
-    const Center(child: Text("Create", style: TextStyle(color: Colors.white, fontSize: 24))),
-    const Center(child: Text("Profile", style: TextStyle(color: Colors.white, fontSize: 24))),
+    const ChatHistoryScreen(),
+    const CreateCharacterScreen(),
+    const ProfileScreen(),
   ];
 
   @override
