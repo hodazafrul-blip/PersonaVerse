@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  // Use local IP for phone-to-backend connection over same Wi-Fi
+  final String baseUrl = 'http://192.168.1.23:8000';
 
   final List<Map<String, dynamic>> _mockCharacters = [
     {
